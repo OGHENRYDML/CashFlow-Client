@@ -6,7 +6,7 @@
 import { loadConfig, payFetch } from "../src/index.js";
 
 const config = loadConfig();
-const fetchWithPayment = payFetch(config);
+const fetchWithPayment = await payFetch(config);
 
 const res = await fetchWithPayment("http://localhost:3000/premium");
 console.log(await res.json());

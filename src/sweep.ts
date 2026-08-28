@@ -31,8 +31,9 @@ export interface SweepResult {
   swept: boolean;
   reason?: string;
   usdcAmount?: string;
-  swapTxHash?: Hex;
-  sweepTxHash?: Hex;
+  /** Chain-native transaction identifier — a 0x-hash on EVM, a base58 signature on Solana. */
+  swapTxHash?: string;
+  sweepTxHash?: string;
 }
 
 /**

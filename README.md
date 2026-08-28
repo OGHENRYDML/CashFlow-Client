@@ -1,16 +1,16 @@
 # cashfl0w
 
 **Wallets for your terminal and your agents.** A one-command, non-custodial
-EVM wallet and x402 payment layer for autonomous agents.
+EVM + Solana wallet and x402 payment layer for autonomous agents.
 
 ```bash
 npx cashfl0w init
 ```
 
-Generates a fresh non-custodial wallet (Base, or Base Sepolia for testing),
-writes the key to a local `.env`, and never sends it anywhere. From there
-the SDK gives the agent two primitives: charge for what it does (`charge`),
-and pay for what it needs (`payFetch`).
+Generates fresh non-custodial wallets — one EVM (Base), one Solana — writes
+both to a local `.env`, and never sends either key anywhere. From there the
+SDK gives the agent two primitives: charge for what it does (`charge`), and
+pay for what it needs (`payFetch`), on either chain.
 
 ## Install
 
@@ -21,17 +21,23 @@ npm install cashfl0w
 ## CLI
 
 ```bash
-npx cashfl0w init                 # generate a wallet, write .env
-npx cashfl0w init -n eip155:8453  # generate straight onto Base mainnet
-npx cashfl0w whoami                # show address + native/USDC balances
-npx cashfl0w sweep                 # sweep USDC balance to CASHFL0W_SWEEP_TO
-npx cashfl0w sweep --swap          # also convert native balance to USDC via 0x first
-npx cashfl0w sweep --dry-run       # see what would happen, no transactions sent
+npx cashfl0w init                    # generate EVM + Solana wallets, write .env
+npx cashfl0w init -n eip155:8453     # EVM straight onto Base mainnet
+npx cashfl0w init --evm-only         # skip the Solana wallet
+npx cashfl0w init --solana-only      # skip the EVM wallet
+npx cashfl0w whoami                   # show both addresses + balances
+npx cashfl0w sweep                    # sweep EVM USDC balance to CASHFL0W_SWEEP_TO
+npx cashfl0w sweep --swap             # also convert native balance to USDC via 0x first
+npx cashfl0w sweep --chain solana     # sweep Solana USDC balance to CASHFL0W_SOLANA_SWEEP_TO
+npx cashfl0w sweep --dry-run          # see what would happen, no transactions sent
 ```
 
-`init` only ever generates an EVM keypair (viem/`secp256k1`) — the plan's
-monetization mechanic runs through 0x, which is EVM-only, so a Solana wallet
-here would be dead weight, not a feature.
+`init` generates both an EVM keypair (viem/`secp256k1`) and a Solana keypair
+(ed25519) by default — x402 itself is chain-agnostic (`ExactEvmScheme` /
+`ExactSvmScheme`), so an agent can charge or pay on either. The one thing
+that stays EVM-only is the `--swap` step on `sweep`: 0x, the mechanic behind
+CASHFL0W's fee, doesn't operate on Solana. `sweep --chain solana` moves USDC
+only, no conversion.
 
 ## SDK
 
@@ -47,8 +53,9 @@ app.use(charge({
   },
 }, config));
 
-// x402 out — auto-pay any 402 you hit calling someone else's endpoint
-const fetchWithPayment = payFetch(config);
+// x402 out — auto-pay any 402 you hit calling someone else's endpoint,
+// with whichever wallet (EVM, Solana, or both) is configured
+const fetchWithPayment = await payFetch(config);
 const res = await fetchWithPayment("https://some-paid-api.com/data");
 ```
 
@@ -61,12 +68,19 @@ server's behalf. `cashfl0w` never makes you sign up for one to get started:
 
 | Network | Default facilitator | Signup? |
 |---|---|---|
-| Testnet (`eip155:84532`, Base Sepolia) | [`x402.org/facilitator`](https://x402.org/facilitator) | None |
-| Mainnet (`eip155:8453`, Base) | [`pay.openfacilitator.io`](https://www.openfacilitator.io/) | None |
+| EVM testnet (`eip155:84532`, Base Sepolia) | [`x402.org/facilitator`](https://x402.org/facilitator) | None |
+| EVM mainnet (`eip155:8453`, Base) | [`pay.openfacilitator.io`](https://www.openfacilitator.io/) | None |
+
+`resolveFacilitator` picks by EVM network only — it's what both `charge`
+and `payFetch` share for every registered scheme, EVM and Solana alike.
+OpenFacilitator's shared endpoint is documented for EVM + Solana **mainnet**;
+if you're pairing Base Sepolia with Solana **devnet** for testing, confirm
+`x402.org/facilitator` actually settles your Solana scheme before relying on
+it — override with `CASHFL0W_FACILITATOR_URL` if it doesn't.
 
 **Why OpenFacilitator by default on mainnet:** it's the only production
-facilitator that settles USDC fee-free on Base without an account or API
-key — a perfect match for the "one command, no signup wall" positioning in
+facilitator that settles USDC fee-free on Base (and Solana) without an
+account or API key — a perfect match for the "one command, no signup wall" positioning in
 the business plan. Coinbase's CDP facilitator is also free and fee-free,
 but requires a CDP API key pair (free, ~2 minutes at
 [portal.cdp.coinbase.com](https://portal.cdp.coinbase.com)) and adds KYT
@@ -89,6 +103,12 @@ API first. If `CASHFL0W_SWAP_FEE_BPS` and `CASHFL0W_SWAP_FEE_RECIPIENT` are
 set, that swap carries CASHFL0W's affiliate fee, paid on-chain as part of
 the trade — this is the entire business model from the plan: the wallet
 tooling is free, the swap fee on the way through is not.
+
+`sweep --chain solana` does the same USDC transfer on Solana, to
+`CASHFL0W_SOLANA_SWEEP_TO` — but with no `--swap` equivalent. 0x doesn't
+route Solana trades, so there's no swap-fee mechanic to plug in there yet;
+a SOL balance stays a SOL balance until a Solana swap aggregator gets wired
+up.
 
 ## Environment variables
 
