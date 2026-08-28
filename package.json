@@ -1,0 +1,71 @@
+{
+  "name": "cashfl0w",
+  "version": "0.1.0",
+  "description": "Wallets for your terminal and your agents. Non-custodial wallet + x402 payment layer for autonomous agents.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "cashfl0w": "./dist/bin/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/bin/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "x402",
+    "wallet",
+    "agents",
+    "crypto",
+    "usdc",
+    "non-custodial",
+    "cli"
+  ],
+  "dependencies": {
+    "@scure/base": "^2.0.0",
+    "@solana/kit": "^8.1.0",
+    "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.98.0",
+    "@x402/core": "^2.24.0",
+    "@x402/evm": "^2.24.0",
+    "@x402/express": "^2.24.0",
+    "@x402/fetch": "^2.24.0",
+    "@x402/svm": "^2.24.0",
+    "commander": "^14.0.0",
+    "dotenv": "^17.0.0",
+    "viem": "^2.21.0"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
